@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WattSense — คำนวณโซลาร์ครบจบที่เดียว</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+:root {
+  --brand:#F5A623; --brand-deep:#E8890A; --brand-pale:#FFF8EC;
+  --sun:#F5A623; --sun-deep:#E8890A; --sun-pale:#FFF8EC;
+  --sky:#1A3A5C; --sky-mid:#2B5280; --sky-light:#3D6FA0;
+  --panel:#0D2137;
+  --grass:#2D7D46; --grass-light:#3DA55E;
+  --cream:#FDF8F0; --warm:#F0EBE1;
+  --white:#FFFFFF; --border:#E5DDD0;
+  --text:#1C1C1E; --muted:#6B7280;
+  --red:#DC2626; --red-pale:#FEF2F2;
+  --radius:16px; --radius-sm:10px; --radius-xs:7px;
+  --shadow:0 4px 24px rgba(26,58,92,0.10);
+  --shadow-sm:0 2px 8px rgba(26,58,92,0.07);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Sarabun',sans-serif;background:var(--cream);color:var(--text);min-height:100vh;}
+
+/* NAV */
+nav{background:var(--panel);position:sticky;top:0;z-index:200;box-shadow:0 2px 16px rgba(0,0,0,0.35);}
+.nav-inner{max-width:960px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:56px;padding:0 16px;}
+.logo{display:flex;align-items:center;gap:9px;font-family:'IBM Plex Sans Thai',sans-serif;font-weight:700;font-size:1.1rem;color:white;cursor:pointer;}
+.logo-box{width:32px;height:32px;background:linear-gradient(135deg,var(--brand),var(--brand-deep));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;overflow:hidden;}
+.logo-box img{width:100%;height:100%;object-fit:cover;border-radius:8px;}
+.logo-name{color:white;}
+.logo-name em{color:var(--brand);font-style:normal;}
+.nav-tabs{display:flex;gap:4px;}
+.nav-tab{padding:6px 14px;border-radius:99px;font-size:0.82rem;font-weight:600;color:rgba(255,255,255,0.6);cursor:pointer;border:none;background:none;font-family:'Sarabun',sans-serif;transition:all 0.2s;}
+.nav-tab.active{background:rgba(245,166,35,0.2);color:var(--brand);}
+.nav-tab:hover:not(.active){color:white;}
+
+/* HERO */
+.hero{background:linear-gradient(155deg,var(--sky) 0%,var(--panel) 100%);color:white;padding:28px 20px 36px;text-align:center;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;top:-80px;right:-80px;width:300px;height:300px;background:radial-gradient(circle,rgba(245,166,35,0.12) 0%,transparent 70%);border-radius:50%;pointer-events:none;}
+.hero-logo-wrap{margin-bottom:10px;}
+.hero-logo-img{width:72px;height:72px;object-fit:contain;border-radius:12px;border:2px solid rgba(255,255,255,0.15);}
+.hero-icon{font-size:2.4rem;margin-bottom:6px;display:block;filter:drop-shadow(0 0 18px rgba(245,166,35,0.55));animation:glow 3s ease-in-out infinite;}
+@keyframes glow{0%,100%{filter:drop-shadow(0 0 18px rgba(245,166,35,0.55));}50%{filter:drop-shadow(0 0 30px rgba(245,166,35,0.85));}}
+.hero h1{font-family:'IBM Plex Sans Thai',sans-serif;font-size:1.5rem;font-weight:700;line-height:1.3;margin-bottom:4px;}
+.hero h1 b{color:var(--brand);}
+.hero-company{font-size:0.85rem;color:rgba(255,255,255,0.75);font-weight:600;margin-bottom:4px;}
+.hero p{font-size:0.85rem;color:rgba(255,255,255,0.6);line-height:1.6;}
+
+/* PAGES */
+.page{display:none;max-width:960px;margin:0 auto;padding:20px 16px 80px;}
+.page.active{display:block;}
+
+/* CARD */
+.card{background:var(--white);border-radius:var(--radius);padding:22px 18px;box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:18px;}
+.card-title{font-family:'IBM Plex Sans Thai',sans-serif;font-size:1rem;font-weight:700;color:var(--sky);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.eyebrow{font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--sun-deep);margin-bottom:4px;}
+
+/* FORM */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-grid.cols3{grid-template-columns:1fr 1fr 1fr;}
+@media(max-width:520px){.form-grid,.form-grid.cols3{grid-template-columns:1fr;}}
+.fg{display:flex;flex-direction:column;gap:5px;}
+.fg.full{grid-column:1/-1;}
+label{font-size:0.8rem;font-weight:600;color:var(--sky);}
+label .unit{font-weight:400;color:var(--muted);font-size:0.75rem;}
+input[type=number],input[type=text],select,textarea{width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:var(--radius-xs);font-family:'Sarabun',sans-serif;font-size:0.92rem;color:var(--text);background:var(--cream);transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;}
+textarea{resize:vertical;min-height:60px;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(245,166,35,0.15);}
+
+/* SYSTEM TABS */
+.sys-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:2px;}
+.sys-btn{border:2px solid var(--border);border-radius:var(--radius-sm);padding:12px 6px;text-align:center;cursor:pointer;background:var(--cream);transition:all .2s;}
+.sys-btn .si{font-size:1.5rem;display:block;margin-bottom:4px;}
+.sys-btn .sn{font-size:0.77rem;font-weight:700;color:var(--sky);}
+.sys-btn .sd{font-size:0.67rem;color:var(--muted);margin-top:2px;line-height:1.3;}
+.sys-btn.active{border-color:var(--brand);background:var(--brand-pale);box-shadow:0 0 0 3px rgba(245,166,35,0.15);}
+
+/* BTN */
+.btn{width:100%;padding:14px;border:none;border-radius:var(--radius-sm);font-family:'IBM Plex Sans Thai',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .15s,box-shadow .15s;}
+.btn-primary{background:linear-gradient(135deg,var(--brand),var(--brand-deep));color:var(--panel);box-shadow:0 4px 16px rgba(245,166,35,0.35);}
+.btn-primary:active{transform:scale(.98);}
+.btn-secondary{background:var(--sky);color:white;box-shadow:0 4px 14px rgba(26,58,92,0.25);}
+.btn-sm{width:auto;padding:9px 20px;font-size:0.85rem;}
+.btn-outline{background:transparent;border:2px solid var(--sky);color:var(--sky);width:auto;padding:9px 18px;font-size:0.85rem;}
+.btn-green{background:linear-gradient(135deg,var(--grass-light),var(--grass));color:white;box-shadow:0 4px 14px rgba(45,125,70,0.3);}
+
+/* RESULTS */
+.res-hero{background:linear-gradient(135deg,var(--sky),var(--panel));color:white;border-radius:var(--radius);padding:26px 20px;text-align:center;margin-bottom:18px;position:relative;overflow:hidden;}
+.res-hero::after{content:'☀️';position:absolute;top:-10px;right:8px;font-size:4.5rem;opacity:0.07;}
+.res-hero .rl{font-size:0.75rem;color:rgba(255,255,255,0.6);letter-spacing:1px;text-transform:uppercase;margin-bottom:2px;}
+.res-hero .rv{font-family:'IBM Plex Sans Thai',sans-serif;font-size:3rem;font-weight:700;color:var(--brand);line-height:1;}
+.res-hero .ru{font-size:1.1rem;font-weight:400;color:rgba(255,255,255,0.75);}
+.res-hero .rd{font-size:0.82rem;color:rgba(255,255,255,0.6);margin-top:6px;}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:18px;}
+.kpi{background:white;border:1px solid var(--border);border-radius:var(--radius-sm);padding:15px 13px;box-shadow:var(--shadow-sm);}
+.kpi .ki{font-size:1.3rem;margin-bottom:4px;}
+.kpi .kl{font-size:0.72rem;color:var(--muted);font-weight:500;}
+.kpi .kv{font-family:'IBM Plex Sans Thai',sans-serif;font-size:1.25rem;font-weight:700;color:var(--sky);line-height:1.2;}
+.kpi .kv.g{color:var(--grass);}
+.kpi .ks{font-size:0.7rem;color:var(--muted);margin-top:1px;}
+
+/* BAR */
+.bar-wrap{margin-bottom:12px;}
+.bar-labels{display:flex;justify-content:space-between;font-size:0.77rem;color:var(--muted);margin-bottom:5px;}
+.bar-track{height:9px;background:var(--warm);border-radius:99px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:99px;transition:width 1s ease;}
+.bar-sun{background:linear-gradient(90deg,var(--brand),var(--brand-deep));}
+.bar-green{background:linear-gradient(90deg,var(--grass-light),var(--grass));}
+.bar-blue{background:linear-gradient(90deg,var(--sky-light),var(--sky));}
+
+/* PAYBACK */
+.pb-wrap{margin-top:16px;}
+.pb-row{display:flex;align-items:center;gap:0;}
+.pb-step{flex:1;text-align:center;position:relative;}
+.pb-step::before{content:'';position:absolute;top:9px;left:0;right:0;height:3px;background:var(--warm);z-index:0;}
+.pb-step:first-child::before{left:50%;}
+.pb-step:last-child::before{right:50%;}
+.pb-dot{width:18px;height:18px;border-radius:50%;background:var(--warm);margin:0 auto 4px;position:relative;z-index:1;transition:background .5s;}
+.pb-dot.paid{background:var(--grass);}
+.pb-dot.now{background:var(--brand);box-shadow:0 0 0 4px rgba(245,166,35,0.25);}
+.pb-lbl{font-size:0.65rem;color:var(--muted);}
+.pb-lbl.now{color:var(--brand-deep);font-weight:700;}
+
+/* ── SETTINGS TAB ── */
+.settings-section{margin-bottom:24px;}
+.settings-title{font-size:0.85rem;font-weight:700;color:var(--sky);margin-bottom:12px;padding-bottom:8px;border-bottom:1.5px solid var(--border);display:flex;align-items:center;gap:6px;}
+.upload-box{border:2px dashed var(--border);border-radius:var(--radius-sm);padding:20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--cream);}
+.upload-box:hover{border-color:var(--brand);background:var(--brand-pale);}
+.upload-box input{display:none;}
+.upload-preview{width:80px;height:80px;object-fit:contain;border-radius:10px;border:1px solid var(--border);margin:0 auto 8px;display:block;}
+.color-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.color-swatch{width:36px;height:36px;border-radius:8px;cursor:pointer;border:3px solid transparent;transition:all .2s;}
+.color-swatch.active{border-color:var(--sky);transform:scale(1.1);}
+.color-custom{padding:7px 10px;width:120px;}
+.save-banner{background:linear-gradient(135deg,var(--grass-light),var(--grass));color:white;border-radius:var(--radius-sm);padding:14px 18px;display:flex;align-items:center;gap:10px;font-weight:600;font-size:0.9rem;}
+
+/* ── TENDER TAB ── */
+.panel-card{background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px;cursor:pointer;transition:all .2s;}
+.panel-card:hover,.panel-card.selected{border-color:var(--brand);background:var(--brand-pale);}
+.panel-card.selected{box-shadow:0 0 0 3px rgba(245,166,35,0.2);}
+.panel-brand{font-weight:700;color:var(--sky);font-size:0.9rem;}
+.panel-spec{font-size:0.75rem;color:var(--muted);margin-top:2px;}
+.panel-watt{font-family:'IBM Plex Sans Thai',sans-serif;font-size:1.3rem;font-weight:700;color:var(--brand);}
+.tender-result-box{background:linear-gradient(135deg,var(--sky),var(--panel));color:white;border-radius:var(--radius);padding:22px;margin-bottom:18px;}
+.tr-label{font-size:0.72rem;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;}
+.tr-val{font-family:'IBM Plex Sans Thai',sans-serif;font-size:2rem;font-weight:700;color:var(--brand);line-height:1.1;}
+.tr-sub{font-size:0.8rem;color:rgba(255,255,255,0.6);margin-top:3px;}
+.bom-table{width:100%;border-collapse:collapse;font-size:0.85rem;}
+.bom-table th{background:var(--sky);color:white;padding:9px 12px;text-align:left;font-weight:600;}
+.bom-table td{padding:9px 12px;border-bottom:1px solid var(--warm);}
+.bom-table tr:last-child td{border-bottom:none;}
+.bom-table tr:nth-child(even) td{background:var(--cream);}
+.bom-qty{font-weight:700;color:var(--sky);font-family:'IBM Plex Sans Thai',sans-serif;}
+.tender-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;}
+@media(max-width:520px){.tender-grid{grid-template-columns:1fr;}}
+.t-kpi{background:white;border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;text-align:center;}
+.t-kpi .tk-val{font-family:'IBM Plex Sans Thai',sans-serif;font-size:1.4rem;font-weight:700;color:var(--sky);}
+.t-kpi .tk-lbl{font-size:0.72rem;color:var(--muted);margin-top:2px;}
+.inv-row{display:flex;align-items:center;gap:10px;padding:10px;border:1.5px solid var(--border);border-radius:var(--radius-xs);margin-bottom:8px;cursor:pointer;background:var(--cream);transition:all .2s;}
+.inv-row:hover,.inv-row.selected{border-color:var(--brand);background:var(--brand-pale);}
+.inv-name{font-weight:700;color:var(--sky);font-size:0.88rem;}
+.inv-spec{font-size:0.73rem;color:var(--muted);}
+.inv-kw{font-family:'IBM Plex Sans Thai',sans-serif;font-size:1.1rem;font-weight:700;color:var(--grass);margin-left:auto;}
+.tab-panels{display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px;}
+.tab-panel-btn{padding:7px 16px;border-radius:99px;font-size:0.8rem;font-weight:600;border:1.5px solid var(--border);background:white;cursor:pointer;color:var(--sky);white-space:nowrap;transition:all .15s;}
+.tab-panel-btn.active{border-color:var(--brand);background:var(--brand-pale);color:var(--brand-deep);}
+
+/* ── LOAD CALCULATOR ── */
+.appliance-header{display:grid;grid-template-columns:2fr 80px 70px 80px 90px 36px;gap:8px;align-items:center;padding:0 4px 8px;border-bottom:1.5px solid var(--border);margin-bottom:10px;}
+.appliance-header span{font-size:0.72rem;font-weight:700;color:var(--muted);text-align:center;}
+.appliance-header span:first-child{text-align:left;}
+.appliance-row{display:grid;grid-template-columns:2fr 80px 70px 80px 90px 36px;gap:8px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--warm);}
+.appliance-row input,.appliance-row select{padding:7px 9px;font-size:0.82rem;}
+.appliance-row .row-kwh{font-size:0.82rem;font-weight:700;color:var(--sky);text-align:center;min-width:60px;}
+.del-btn{width:32px;height:32px;border:none;background:var(--red-pale);color:var(--red);border-radius:6px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.add-appliance-btn{display:flex;align-items:center;gap:6px;padding:9px 16px;background:var(--sky-mid);color:white;border:none;border-radius:var(--radius-xs);font-family:'Sarabun',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;margin-top:10px;}
+.load-summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px;}
+@media(max-width:480px){.load-summary-grid{grid-template-columns:1fr 1fr;}}
+.load-kpi{background:var(--sun-pale);border:1px solid rgba(245,166,35,0.3);border-radius:var(--radius-sm);padding:13px 11px;text-align:center;}
+.load-kpi .lk-val{font-family:'IBM Plex Sans Thai',sans-serif;font-size:1.4rem;font-weight:700;color:var(--sky);}
+.load-kpi .lk-lbl{font-size:0.7rem;color:var(--muted);margin-top:2px;}
+.preset-chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px;}
+.preset-chip{padding:5px 12px;border-radius:99px;font-size:0.77rem;font-weight:600;border:1.5px solid var(--border);background:white;cursor:pointer;color:var(--sky);transition:all .15s;}
+.preset-chip:hover{border-color:var(--brand);background:var(--brand-pale);}
+
+/* DISCLAIMER */
+.disclaimer{font-size:0.7rem;color:var(--muted);text-align:center;padding:0 8px 8px;line-height:1.6;}
+.reveal{animation:slideUp .35s ease both;}
+@keyframes slideUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+@media(max-width:600px){
+  .appliance-header,.appliance-row{grid-template-columns:1.5fr 65px 55px 65px 75px 30px;gap:5px;}
+  .hero h1{font-size:1.3rem;}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <div class="logo" onclick="showPage('settings',document.getElementById('tab-settings'))">
+      <div class="logo-box" id="nav-logo-box">☀️</div>
+      <span class="logo-name" id="nav-brand-name">Watt<em>Sense</em></span>
+    </div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" id="tab-solar" onclick="showPage('solar',this)">🔆 โซลาร์</button>
+      <button class="nav-tab" id="tab-tender" onclick="showPage('tender',this)">📋 Tender</button>
+      <button class="nav-tab" id="tab-load" onclick="showPage('load',this)">🏠 โหลดไฟ</button>
+      <button class="nav-tab" id="tab-settings" onclick="showPage('settings',this)">⚙️ ตั้งค่า</button>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero" id="hero-section">
+  <div class="hero-logo-wrap" id="hero-logo-wrap" style="display:none">
+    <img class="hero-logo-img" id="hero-logo-img" src="" alt="logo">
+  </div>
+  <span class="hero-icon" id="hero-icon">☀️</span>
+  <h1>คำนวณโซลาร์ + โหลดไฟ<br><b>ครบ จบ ที่เดียว</b></h1>
+  <div class="hero-company" id="hero-company" style="display:none"></div>
+  <p id="hero-tagline">สำหรับช่างติดตั้ง · ที่ปรึกษาโซลาร์ · เจ้าของบ้าน<br>คำนวณแล้วส่ง PDF ให้ลูกค้าได้เลย</p>
+</div>
+
+<!-- ══════════════════════════════
+     PAGE 1: SOLAR CALCULATOR
+══════════════════════════════ -->
+<div class="page active" id="page-solar">
+  <div class="card">
+    <div class="eyebrow">ขั้นตอนที่ 1</div>
+    <div class="card-title">⚡ ข้อมูลการใช้ไฟฟ้า</div>
+    <div class="form-grid">
+      <div class="fg">
+        <label>ค่าไฟเฉลี่ย/เดือน <span class="unit">(บาท)</span></label>
+        <input type="number" id="s_bill" placeholder="เช่น 3,500">
+      </div>
+      <div class="fg">
+        <label>หน่วยที่ใช้/เดือน <span class="unit">(kWh)</span></label>
+        <input type="number" id="s_kwh" placeholder="เช่น 500">
+      </div>
+      <div class="fg">
+        <label>พื้นที่หลังคา <span class="unit">(ตร.ม.)</span></label>
+        <input type="number" id="s_area" placeholder="เช่น 60" value="60">
+      </div>
+      <div class="fg">
+        <label>ภูมิภาค</label>
+        <select id="s_region">
+          <option value="south">ภาคใต้ (สงขลา, นครศรีฯ, สุราษฎร์ฯ)</option>
+          <option value="central" selected>ภาคกลาง (กรุงเทพฯ, ชลบุรี)</option>
+          <option value="north">ภาคเหนือ (เชียงใหม่, ลำปาง)</option>
+          <option value="northeast">ภาคอีสาน (โคราช, อุดรฯ)</option>
+          <option value="east">ภาคตะวันออก (ระยอง, จันทบุรี)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="eyebrow">ขั้นตอนที่ 2</div>
+    <div class="card-title">🔋 ประเภทระบบ</div>
+    <div class="sys-grid">
+      <div class="sys-btn active" onclick="selectSys('ongrid',this)">
+        <span class="si">⚡</span>
+        <div class="sn">On-Grid</div>
+        <div class="sd">ต้นทุนต่ำ · ขายไฟ MEA/PEA ได้</div>
+      </div>
+      <div class="sys-btn" onclick="selectSys('hybrid',this)">
+        <span class="si">🔋</span>
+        <div class="sn">Hybrid</div>
+        <div class="sd">มีแบตสำรอง · ไฟไม่ดับ</div>
+      </div>
+      <div class="sys-btn" onclick="selectSys('offgrid',this)">
+        <span class="si">🏝️</span>
+        <div class="sn">Off-Grid</div>
+        <div class="sd">ไม่ต้องต่อสายไฟสาธารณะ</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="eyebrow">ขั้นตอนที่ 3</div>
+    <div class="card-title">⚙️ รายละเอียดระบบ</div>
+    <div class="form-grid">
+      <div class="fg">
+        <label>แบรนด์แผง Solar</label>
+        <select id="s_brand">
+          <option value="jinko">Jinko Solar (Tiger Neo)</option>
+          <option value="longi">LONGi Hi-MO 6</option>
+          <option value="canadian">Canadian Solar HiKu7</option>
+          <option value="risen">Risen Energy Titan</option>
+          <option value="other">อื่นๆ / ทั่วไป</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>ราคาติดตั้ง <span class="unit">(บาท/Wp)</span></label>
+        <input type="number" id="s_costwp" value="25" min="10" max="60">
+      </div>
+      <div class="fg">
+        <label>อัตราค่าไฟ <span class="unit">(บาท/kWh)</span></label>
+        <input type="number" id="s_tariff" value="4.20" step="0.01">
+      </div>
+      <div class="fg">
+        <label>ราคา FiT ขายไฟ <span class="unit">(บาท/kWh, ถ้ามี)</span></label>
+        <input type="number" id="s_fit" value="0" step="0.01">
+      </div>
+      <div class="fg full">
+        <label>ชื่อลูกค้า <span class="unit">(ปรากฎใน PDF)</span></label>
+        <input type="text" id="s_customer" placeholder="เช่น คุณสมชาย / บ้านคุณวิภา">
+      </div>
+    </div>
+    <br>
+    <button class="btn btn-primary" onclick="calcSolar()">☀️ คำนวณระบบโซลาร์</button>
+  </div>
+
+  <div id="solar-results" style="display:none">
+    <div class="res-hero reveal" id="sr-hero">
+      <div class="rl">ขนาดระบบที่แนะนำ</div>
+      <div><span class="rv" id="sr-kwp">—</span> <span class="ru">kWp</span></div>
+      <div class="rd" id="sr-detail">—</div>
+    </div>
+    <div class="kpi-grid reveal">
+      <div class="kpi"><div class="ki">💡</div><div class="kl">ผลิตไฟ/ปี</div><div class="kv" id="sr-prod">—</div><div class="ks">kWh/ปี</div></div>
+      <div class="kpi"><div class="ki">💰</div><div class="kl">ประหยัด/ปี</div><div class="kv g" id="sr-save">—</div><div class="ks">บาท/ปี</div></div>
+      <div class="kpi"><div class="ki">🏗️</div><div class="kl">งบลงทุน</div><div class="kv" id="sr-invest">—</div><div class="ks">บาท (ประมาณ)</div></div>
+      <div class="kpi"><div class="ki">🌱</div><div class="kl">ลด CO₂/ปี</div><div class="kv g" id="sr-co2">—</div><div class="ks">kg CO₂</div></div>
+    </div>
+    <div class="card reveal">
+      <div class="card-title">📈 ROI และการคืนทุน</div>
+      <div class="bar-wrap">
+        <div class="bar-labels"><span>% ไฟที่ผลิตได้ vs ใช้จริง</span><span id="sr-cover">—%</span></div>
+        <div class="bar-track"><div class="bar-fill bar-sun" id="bar-cover" style="width:0%"></div></div>
+      </div>
+      <div class="bar-wrap">
+        <div class="bar-labels"><span>ROI 25 ปี</span><span id="sr-roi">—%</span></div>
+        <div class="bar-track"><div class="bar-fill bar-green" id="bar-roi" style="width:0%"></div></div>
+      </div>
+      <div class="pb-wrap">
+        <div class="bar-labels" style="margin-bottom:10px">
+          <span style="font-weight:700;color:var(--sky)">Timeline คืนทุน</span>
+          <span style="font-weight:700;color:var(--brand-deep)" id="sr-payback">— ปี</span>
+        </div>
+        <div class="pb-row" id="pb-row"></div>
+      </div>
+    </div>
+    <div class="card reveal">
+      <div class="card-title">📄 ส่งออก PDF ให้ลูกค้า</div>
+      <p style="font-size:0.83rem;color:var(--muted);margin-bottom:14px;line-height:1.6">PDF จะมีผลคำนวณครบถ้วนพร้อมกราฟ สามารถส่งให้ลูกค้าได้ทันที</p>
+      <button class="btn btn-secondary" onclick="exportPDF()">⬇️ ดาวน์โหลด PDF Report</button>
+    </div>
+    <p class="disclaimer">* ค่าประมาณอ้างอิงจาก Peak Sun Hours มาตรฐาน และ Performance Ratio ทั่วไป<br>ควรให้วิศวกรสำรวจหน้างานก่อนตัดสินใจติดตั้ง</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     PAGE 2: TENDER CALCULATOR
+══════════════════════════════ -->
+<div class="page" id="page-tender">
+
+  <!-- INPUT -->
+  <div class="card">
+    <div class="eyebrow">Tender / BOM</div>
+    <div class="card-title">📋 ข้อมูลโครงการ</div>
+    <div class="form-grid cols3">
+      <div class="fg">
+        <label>ขนาดระบบ <span class="unit">(kWp)</span></label>
+        <input type="number" id="t_kwp" placeholder="เช่น 10" oninput="calcTender()">
+      </div>
+      <div class="fg">
+        <label>ประเภทระบบ</label>
+        <select id="t_system" onchange="calcTender()">
+          <option value="ongrid">On-Grid</option>
+          <option value="hybrid">Hybrid</option>
+          <option value="offgrid">Off-Grid</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>ชื่อโครงการ</label>
+        <input type="text" id="t_project" placeholder="เช่น บ้านคุณวิภา">
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL SELECTION -->
+  <div class="card">
+    <div class="card-title">☀️ เลือกแผง Solar</div>
+
+    <!-- Panel Brand Tabs -->
+    <div class="tab-panels">
+      <button class="tab-panel-btn active" onclick="filterPanel('all',this)">ทั้งหมด</button>
+      <button class="tab-panel-btn" onclick="filterPanel('jinko',this)">Jinko</button>
+      <button class="tab-panel-btn" onclick="filterPanel('longi',this)">LONGi</button>
+      <button class="tab-panel-btn" onclick="filterPanel('canadian',this)">Canadian</button>
+      <button class="tab-panel-btn" onclick="filterPanel('risen',this)">Risen</button>
+      <button class="tab-panel-btn" onclick="filterPanel('custom',this)">กำหนดเอง</button>
+    </div>
+
+    <div id="panel-list"></div>
+
+    <!-- Custom Panel Input -->
+    <div id="custom-panel-form" style="display:none">
+      <div class="form-grid" style="margin-top:12px;">
+        <div class="fg">
+          <label>ยี่ห้อ / รุ่น</label>
+          <input type="text" id="cp_name" placeholder="เช่น Trina Vertex S+" oninput="updateCustomPanel()">
+        </div>
+        <div class="fg">
+          <label>กำลังต่อแผง <span class="unit">(Wp)</span></label>
+          <input type="number" id="cp_watt" placeholder="เช่น 580" oninput="updateCustomPanel()">
+        </div>
+        <div class="fg">
+          <label>ราคาต่อแผง <span class="unit">(บาท)</span></label>
+          <input type="number" id="cp_price" placeholder="เช่น 4500" oninput="updateCustomPanel()">
+        </div>
+        <div class="fg">
+          <label>ประสิทธิภาพ <span class="unit">(%)</span></label>
+          <input type="number" id="cp_eff" placeholder="เช่น 22.5" oninput="updateCustomPanel()">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INVERTER SELECTION -->
+  <div class="card">
+    <div class="card-title">⚡ เลือก Inverter</div>
+    <div id="inverter-list"></div>
+    <!-- Custom Inverter -->
+    <div style="margin-top:10px;padding:10px;border:1.5px dashed var(--border);border-radius:var(--radius-xs);">
+      <div style="font-size:0.8rem;font-weight:600;color:var(--muted);margin-bottom:8px;">➕ กำหนด Inverter เอง</div>
+      <div class="form-grid">
+        <div class="fg">
+          <label>ยี่ห้อ / รุ่น</label>
+          <input type="text" id="ci_name" placeholder="เช่น Huawei SUN2000-10KTL" oninput="updateCustomInv()">
+        </div>
+        <div class="fg">
+          <label>กำลัง <span class="unit">(kW)</span></label>
+          <input type="number" id="ci_kw" placeholder="เช่น 10" oninput="updateCustomInv()">
+        </div>
+        <div class="fg">
+          <label>ราคา <span class="unit">(บาท)</span></label>
+          <input type="number" id="ci_price" placeholder="เช่น 25000" oninput="updateCustomInv()">
+        </div>
+        <div class="fg" style="align-self:end;">
+          <button class="btn btn-outline btn-sm" onclick="selectCustomInv()">ใช้ Inverter นี้</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="tender-results" style="display:none">
+    <div class="tender-result-box reveal">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;text-align:center;">
+        <div>
+          <div class="tr-label">จำนวนแผง</div>
+          <div class="tr-val" id="t-panels">—</div>
+          <div class="tr-sub" id="t-panel-name">—</div>
+        </div>
+        <div>
+          <div class="tr-label">กำลังรวม</div>
+          <div class="tr-val" id="t-total-kwp">—</div>
+          <div class="tr-sub">kWp</div>
+        </div>
+        <div>
+          <div class="tr-label">จำนวน Inverter</div>
+          <div class="tr-val" id="t-invs">—</div>
+          <div class="tr-sub" id="t-inv-name">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tender-grid reveal">
+      <div class="t-kpi"><div class="tk-val" id="t-panel-cost">—</div><div class="tk-lbl">ราคาแผงรวม (บาท)</div></div>
+      <div class="t-kpi"><div class="tk-val" id="t-inv-cost">—</div><div class="tk-lbl">ราคา Inverter รวม (บาท)</div></div>
+      <div class="t-kpi"><div class="tk-val" id="t-equip-total">—</div><div class="tk-lbl">รวมค่าอุปกรณ์ (บาท)</div></div>
+      <div class="t-kpi"><div class="tk-val" id="t-est-total">—</div><div class="tk-lbl">ประมาณงบรวมติดตั้ง (บาท)</div></div>
+    </div>
+
+    <div class="card reveal">
+      <div class="card-title">📦 BOM สรุป</div>
+      <table class="bom-table">
+        <thead>
+          <tr>
+            <th>รายการ</th>
+            <th>รุ่น/สเปค</th>
+            <th style="text-align:right">จำนวน</th>
+            <th style="text-align:right">ราคา/หน่วย</th>
+            <th style="text-align:right">รวม</th>
+          </tr>
+        </thead>
+        <tbody id="bom-body"></tbody>
+      </table>
+    </div>
+
+    <div class="card reveal">
+      <div class="card-title">📄 Export BOM PDF</div>
+      <button class="btn btn-green" onclick="exportTenderPDF()">⬇️ ดาวน์โหลด BOM Report</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     PAGE 3: LOAD CALCULATOR
+══════════════════════════════ -->
+<div class="page" id="page-load">
+  <div class="card">
+    <div class="eyebrow">โหลดไฟในบ้าน</div>
+    <div class="card-title">🏠 รายการเครื่องใช้ไฟฟ้า</div>
+    <div class="preset-chips">
+      <button class="preset-chip" onclick="addPreset('บ้านทาวน์เฮ้าส์')">🏘️ ทาวน์เฮ้าส์</button>
+      <button class="preset-chip" onclick="addPreset('บ้านเดี่ยว')">🏡 บ้านเดี่ยว</button>
+      <button class="preset-chip" onclick="addPreset('คอนโด')">🏢 คอนโด</button>
+      <button class="preset-chip" onclick="addPreset('ออฟฟิศเล็ก')">🖥️ ออฟฟิศเล็ก</button>
+    </div>
+    <div class="appliance-header">
+      <span>เครื่องใช้ไฟฟ้า</span>
+      <span>กำลัง (W)</span>
+      <span>จำนวน</span>
+      <span>ชม./วัน</span>
+      <span>kWh/เดือน</span>
+      <span></span>
+    </div>
+    <div id="appliance-list"></div>
+    <button class="add-appliance-btn" onclick="addRow()">+ เพิ่มเครื่องใช้ไฟฟ้า</button>
+    <div class="load-summary-grid" id="load-summary">
+      <div class="load-kpi"><div class="lk-val" id="l-total-w">0</div><div class="lk-lbl">กำลังไฟรวม (W)</div></div>
+      <div class="load-kpi"><div class="lk-val" id="l-total-kwh">0</div><div class="lk-lbl">kWh/เดือน</div></div>
+      <div class="load-kpi"><div class="lk-val" id="l-total-thb">0</div><div class="lk-lbl">ค่าไฟ/เดือน (บาท)</div></div>
+    </div>
+  </div>
+  <div class="card" id="load-to-solar" style="display:none">
+    <div class="card-title">🔆 นำโหลดไปคำนวณโซลาร์</div>
+    <p style="font-size:0.84rem;color:var(--muted);margin-bottom:14px;line-height:1.6">ระบบจะนำ <b id="lts-kwh">—</b> kWh/เดือน ไปใส่ในหน้าคำนวณโซลาร์ให้อัตโนมัติ</p>
+    <button class="btn btn-primary" onclick="sendToSolar()">☀️ คำนวณโซลาร์จากโหลดนี้</button>
+  </div>
+  <p class="disclaimer">* ค่าไฟคำนวณจากอัตรา 4.20 บาท/kWh (ภาคครัวเรือน)</p>
+</div>
+
+<!-- ══════════════════════════════
+     PAGE 4: SETTINGS (WHITE-LABEL)
+══════════════════════════════ -->
+<div class="page" id="page-settings">
+
+  <!-- BRAND IDENTITY -->
+  <div class="card">
+    <div class="settings-title">🏢 ข้อมูลบริษัท / Brand</div>
+    <div class="form-grid">
+      <div class="fg">
+        <label>ชื่อบริษัท</label>
+        <input type="text" id="cfg_company" placeholder="เช่น SunPower Thailand" oninput="previewBrand()">
+      </div>
+      <div class="fg">
+        <label>Tagline / Slogan</label>
+        <input type="text" id="cfg_tagline" placeholder="เช่น ติดตั้งโซลาร์ครบวงจร" oninput="previewBrand()">
+      </div>
+      <div class="fg">
+        <label>เบอร์โทร</label>
+        <input type="text" id="cfg_phone" placeholder="เช่น 02-xxx-xxxx">
+      </div>
+      <div class="fg">
+        <label>อีเมล / Website</label>
+        <input type="text" id="cfg_email" placeholder="เช่น info@sunpower.th">
+      </div>
+      <div class="fg full">
+        <label>ที่อยู่บริษัท <span class="unit">(ปรากฎใน PDF)</span></label>
+        <textarea id="cfg_address" placeholder="เช่น 123 ถ.พระราม 9 กรุงเทพฯ 10400"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGO UPLOAD -->
+  <div class="card">
+    <div class="settings-title">🖼️ Logo บริษัท</div>
+    <div class="upload-box" onclick="document.getElementById('logo-input').click()">
+      <input type="file" id="logo-input" accept="image/*" onchange="handleLogoUpload(event)">
+      <div id="logo-preview-wrap">
+        <div style="font-size:2rem;margin-bottom:6px;">📁</div>
+        <div style="font-size:0.85rem;font-weight:600;color:var(--sky)">คลิกเพื่ออัปโหลด Logo</div>
+        <div style="font-size:0.75rem;color:var(--muted);margin-top:4px;">PNG, JPG, SVG · แนะนำ 200×200px ขึ้นไป</div>
+      </div>
+    </div>
+    <p style="font-size:0.75rem;color:var(--muted);margin-top:8px;text-align:center;">Logo จะแสดงใน Navigation, Hero section และ PDF ทุกใบ</p>
+  </div>
+
+  <!-- COLOR THEME -->
+  <div class="card">
+    <div class="settings-title">🎨 สีธีมหลัก</div>
+    <div class="color-row">
+      <div class="color-swatch active" style="background:#F5A623;" data-color="#F5A623" onclick="setColor('#F5A623',this)" title="ส้มทอง (Default)"></div>
+      <div class="color-swatch" style="background:#2563EB;" data-color="#2563EB" onclick="setColor('#2563EB',this)" title="น้ำเงิน"></div>
+      <div class="color-swatch" style="background:#16A34A;" data-color="#16A34A" onclick="setColor('#16A34A',this)" title="เขียว"></div>
+      <div class="color-swatch" style="background:#DC2626;" data-color="#DC2626" onclick="setColor('#DC2626',this)" title="แดง"></div>
+      <div class="color-swatch" style="background:#7C3AED;" data-color="#7C3AED" onclick="setColor('#7C3AED',this)" title="ม่วง"></div>
+      <div class="color-swatch" style="background:#0891B2;" data-color="#0891B2" onclick="setColor('#0891B2',this)" title="ฟ้า"></div>
+      <input type="color" class="color-custom" id="color-picker" value="#F5A623" oninput="setColor(this.value,null)" title="เลือกสีเอง">
+    </div>
+    <div style="margin-top:12px;padding:10px 14px;background:var(--cream);border-radius:var(--radius-xs);font-size:0.8rem;color:var(--muted);">
+      ตัวอย่าง: <span id="color-preview-btn" style="display:inline-block;padding:4px 14px;border-radius:99px;color:white;font-weight:700;font-size:0.8rem;background:#F5A623">ปุ่มหลัก</span>
+    </div>
+  </div>
+
+  <!-- SAVE -->
+  <button class="btn btn-primary" onclick="saveSettings()" style="margin-bottom:12px;">💾 บันทึกและใช้งาน</button>
+  <div class="save-banner" id="save-banner" style="display:none">
+    <span>✅</span> บันทึกแล้ว! โลโก้และสีของคุณถูกใช้งานทั่วทั้งแอปและ PDF แล้ว
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════
+     PDF TEMPLATES (hidden)
+══════════════════════════════ -->
+<div id="pdf-template" style="display:none;font-family:'Sarabun',sans-serif;padding:32px;max-width:720px;margin:0 auto;">
+  <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #1A3A5C;padding-bottom:16px;margin-bottom:20px;">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div id="pdf-logo-wrap" style="display:none"><img id="pdf-logo" style="width:48px;height:48px;object-fit:contain;border-radius:8px;" src="" alt="logo"></div>
+      <div>
+        <div style="font-size:1.3rem;font-weight:700;color:#1A3A5C;" id="pdf-company-name">WattSense</div>
+        <div style="font-size:0.78rem;color:#6B7280;" id="pdf-company-sub">รายงานการวิเคราะห์ระบบโซลาร์</div>
+      </div>
+    </div>
+    <div style="text-align:right;font-size:0.78rem;color:#6B7280;">
+      <div id="pdf-date">—</div>
+      <div id="pdf-customer-header">—</div>
+      <div id="pdf-contact" style="margin-top:2px;"></div>
+    </div>
+  </div>
+  <div id="pdf-brand-stripe" style="height:4px;border-radius:2px;margin-bottom:20px;background:#F5A623;"></div>
+  <div style="background:#1A3A5C;color:white;border-radius:12px;padding:20px;text-align:center;margin-bottom:20px;">
+    <div style="font-size:0.8rem;color:rgba(255,255,255,0.6);margin-bottom:4px;">ขนาดระบบที่แนะนำ</div>
+    <div style="font-size:2.8rem;font-weight:700;" id="pdf-kwp" style="color:#F5A623">—</div>
+    <div style="font-size:1rem;color:rgba(255,255,255,0.75);">kWp</div>
+    <div style="font-size:0.8rem;color:rgba(255,255,255,0.55);margin-top:6px;" id="pdf-detail">—</div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px;" id="pdf-kpis"></div>
+  <div style="background:#F0EBE1;border-radius:10px;padding:16px;margin-bottom:20px;">
+    <div style="font-weight:700;color:#1A3A5C;margin-bottom:10px;">📈 ผลตอบแทนการลงทุน</div>
+    <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+      <tr><td style="padding:5px 0;color:#6B7280;">ระยะเวลาคืนทุน</td><td style="text-align:right;font-weight:700;color:#1A3A5C;" id="pdf-payback">—</td></tr>
+      <tr><td style="padding:5px 0;color:#6B7280;">ROI ตลอด 25 ปี</td><td style="text-align:right;font-weight:700;color:#2D7D46;" id="pdf-roi">—</td></tr>
+      <tr><td style="padding:5px 0;color:#6B7280;">รายได้/ประหยัดรวม 25 ปี</td><td style="text-align:right;font-weight:700;color:#2D7D46;" id="pdf-total25">—</td></tr>
+      <tr><td style="padding:5px 0;color:#6B7280;">ลด CO₂ รวม 25 ปี</td><td style="text-align:right;font-weight:700;color:#2D7D46;" id="pdf-co2-25">—</td></tr>
+    </table>
+  </div>
+  <div style="font-size:0.68rem;color:#9CA3AF;text-align:center;border-top:1px solid #E5DDD0;padding-top:12px;" id="pdf-footer">
+    สร้างด้วย WattSense · ค่าประมาณอ้างอิงจากมาตรฐาน Peak Sun Hours และ Performance Ratio · ควรให้วิศวกรสำรวจหน้างานก่อนติดตั้ง
+  </div>
+</div>
+
+<!-- BOM PDF TEMPLATE -->
+<div id="bom-pdf-template" style="display:none;font-family:'Sarabun',sans-serif;padding:32px;max-width:720px;margin:0 auto;">
+  <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #1A3A5C;padding-bottom:16px;margin-bottom:12px;">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div id="bom-logo-wrap" style="display:none"><img id="bom-logo" style="width:48px;height:48px;object-fit:contain;border-radius:8px;" src="" alt="logo"></div>
+      <div>
+        <div style="font-size:1.3rem;font-weight:700;color:#1A3A5C;" id="bom-company-name">WattSense</div>
+        <div style="font-size:0.78rem;color:#6B7280;">BOM / Tender Report</div>
+      </div>
+    </div>
+    <div style="text-align:right;font-size:0.78rem;color:#6B7280;">
+      <div id="bom-date">—</div>
+      <div id="bom-project-header">—</div>
+    </div>
+  </div>
+  <div id="bom-brand-stripe" style="height:4px;border-radius:2px;margin-bottom:16px;background:#F5A623;"></div>
+  <div id="bom-summary-box" style="background:#1A3A5C;color:white;border-radius:12px;padding:16px 20px;margin-bottom:20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:center;">
+    <div>
+      <div style="font-size:0.72rem;color:rgba(255,255,255,0.55);margin-bottom:3px;">จำนวนแผง</div>
+      <div style="font-size:1.8rem;font-weight:700;color:#F5A623;" id="bom-panels-pdf">—</div>
+      <div style="font-size:0.72rem;color:rgba(255,255,255,0.6);" id="bom-panel-name-pdf">—</div>
+    </div>
+    <div>
+      <div style="font-size:0.72rem;color:rgba(255,255,255,0.55);margin-bottom:3px;">กำลังรวม</div>
+      <div style="font-size:1.8rem;font-weight:700;color:#F5A623;" id="bom-kwp-pdf">—</div>
+      <div style="font-size:0.72rem;color:rgba(255,255,255,0.6);">kWp</div>
+    </div>
+    <div>
+      <div style="font-size:0.72rem;color:rgba(255,255,255,0.55);margin-bottom:3px;">งบรวมประมาณ</div>
+      <div style="font-size:1.8rem;font-weight:700;color:#F5A623;" id="bom-total-pdf">—</div>
+      <div style="font-size:0.72rem;color:rgba(255,255,255,0.6);">บาท</div>
+    </div>
+  </div>
+  <table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin-bottom:20px;">
+    <thead>
+      <tr style="background:#1A3A5C;color:white;">
+        <th style="padding:8px 10px;text-align:left;">รายการ</th>
+        <th style="padding:8px 10px;text-align:left;">รุ่น/สเปค</th>
+        <th style="padding:8px 10px;text-align:right;">จำนวน</th>
+        <th style="padding:8px 10px;text-align:right;">ราคา/หน่วย</th>
+        <th style="padding:8px 10px;text-align:right;">รวม</th>
+      </tr>
+    </thead>
+    <tbody id="bom-pdf-body"></tbody>
+  </table>
+  <div style="font-size:0.68rem;color:#9CA3AF;text-align:center;border-top:1px solid #E5DDD0;padding-top:12px;" id="bom-footer">
+    สร้างด้วย WattSense · ราคาอุปกรณ์เป็นราคาประมาณ ควรยืนยันกับตัวแทนจำหน่ายก่อนเสนอราคา
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════
+// BRAND CONFIG
+// ══════════════════════════════
+let brandConfig = {
+  company: '', tagline: '', phone: '', email: '', address: '',
+  logoDataUrl: null, color: '#F5A623'
+};
+
+function applyBrand() {
+  const c = brandConfig;
+  // CSS color
+  document.documentElement.style.setProperty('--brand', c.color);
+  document.documentElement.style.setProperty('--brand-deep', shadeColor(c.color, -20));
+  document.documentElement.style.setProperty('--brand-pale', hexToRgba(c.color, 0.08));
+  document.documentElement.style.setProperty('--sun', c.color);
+  document.documentElement.style.setProperty('--sun-deep', shadeColor(c.color, -20));
+  document.documentElement.style.setProperty('--sun-pale', hexToRgba(c.color, 0.08));
+
+  // Nav logo
+  const box = document.getElementById('nav-logo-box');
+  const nameEl = document.getElementById('nav-brand-name');
+  if (c.logoDataUrl) {
+    box.innerHTML = `<img src="${c.logoDataUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">`;
+  } else {
+    box.textContent = '☀️';
+  }
+  if (c.company) {
+    nameEl.innerHTML = `<em style="color:var(--brand)">${c.company}</em>`;
+  } else {
+    nameEl.innerHTML = `Watt<em>Sense</em>`;
+  }
+
+  // Hero
+  const heroIcon = document.getElementById('hero-icon');
+  const heroLogoWrap = document.getElementById('hero-logo-wrap');
+  const heroLogoImg = document.getElementById('hero-logo-img');
+  const heroCompany = document.getElementById('hero-company');
+  const heroTagline = document.getElementById('hero-tagline');
+
+  if (c.logoDataUrl) {
+    heroLogoWrap.style.display = 'block';
+    heroLogoImg.src = c.logoDataUrl;
+    heroIcon.style.display = 'none';
+  } else {
+    heroLogoWrap.style.display = 'none';
+    heroIcon.style.display = 'block';
+  }
+  if (c.company) {
+    heroCompany.style.display = 'block';
+    heroCompany.textContent = c.company;
+  } else {
+    heroCompany.style.display = 'none';
+  }
+  if (c.tagline) {
+    heroTagline.innerHTML = c.tagline + '<br><span style="opacity:0.6;font-size:0.8em">Powered by WattSense</span>';
+  } else {
+    heroTagline.innerHTML = 'สำหรับช่างติดตั้ง · ที่ปรึกษาโซลาร์ · เจ้าของบ้าน<br>คำนวณแล้วส่ง PDF ให้ลูกค้าได้เลย';
+  }
+}
+
+function previewBrand() {
+  brandConfig.company = document.getElementById('cfg_company').value;
+  brandConfig.tagline = document.getElementById('cfg_tagline').value;
+  applyBrand();
+}
+
+function setColor(hex, el) {
+  brandConfig.color = hex;
+  document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+  if (el) el.classList.add('active');
+  document.getElementById('color-picker').value = hex;
+  document.getElementById('color-preview-btn').style.background = hex;
+  applyBrand();
+}
+
+function handleLogoUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    brandConfig.logoDataUrl = e.target.result;
+    document.getElementById('logo-preview-wrap').innerHTML =
+      `<img class="upload-preview" src="${e.target.result}" alt="logo">
+       <div style="font-size:0.8rem;font-weight:600;color:var(--grass)">✅ อัปโหลดแล้ว</div>
+       <div style="font-size:0.72rem;color:var(--muted);margin-top:2px">${file.name}</div>`;
+    applyBrand();
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveSettings() {
+  brandConfig.company = document.getElementById('cfg_company').value;
+  brandConfig.tagline = document.getElementById('cfg_tagline').value;
+  brandConfig.phone = document.getElementById('cfg_phone').value;
+  brandConfig.email = document.getElementById('cfg_email').value;
+  brandConfig.address = document.getElementById('cfg_address').value;
+  applyBrand();
+  const banner = document.getElementById('save-banner');
+  banner.style.display = 'flex';
+  setTimeout(() => banner.style.display = 'none', 3000);
+}
+
+function updateCustomPanel() { calcTender(); }
+function updateCustomInv() {}
+
+// Color utilities
+function shadeColor(hex, pct) {
+  let R=parseInt(hex.slice(1,3),16), G=parseInt(hex.slice(3,5),16), B=parseInt(hex.slice(5,7),16);
+  R=Math.max(0,Math.min(255,Math.round(R*(1+pct/100))));
+  G=Math.max(0,Math.min(255,Math.round(G*(1+pct/100))));
+  B=Math.max(0,Math.min(255,Math.round(B*(1+pct/100))));
+  return '#'+[R,G,B].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+function hexToRgba(hex, a) {
+  const R=parseInt(hex.slice(1,3),16), G=parseInt(hex.slice(3,5),16), B=parseInt(hex.slice(5,7),16);
+  return `rgba(${R},${G},${B},${a})`;
+}
+
+// ══════════════════════════════
+// TENDER DATA
+// ══════════════════════════════
+const PANELS = [
+  {id:'j580',brand:'jinko',name:'Jinko Solar Tiger Neo N-type',model:'JKM580N-72HL4-BDV',watt:580,eff:22.4,price:4200,color:'#1A3A5C'},
+  {id:'j605',brand:'jinko',name:'Jinko Solar Tiger Neo 605W',model:'JKM605N-78HL4-BDV',watt:605,eff:22.8,price:4500,color:'#1A3A5C'},
+  {id:'l580',brand:'longi',name:'LONGi Hi-MO 6',model:'LR5-72HTH-580M',watt:580,eff:22.0,price:4100,color:'#E8890A'},
+  {id:'l610',brand:'longi',name:'LONGi Hi-MO X6 Ultra',model:'LR5-72HGT-610M',watt:610,eff:23.1,price:4800,color:'#E8890A'},
+  {id:'c580',brand:'canadian',name:'Canadian Solar HiKu7',model:'CS7N-580MS',watt:580,eff:21.9,price:4000,color:'#2D7D46'},
+  {id:'r605',brand:'risen',name:'Risen Energy Titan',model:'RSM150-8-605M',watt:605,eff:22.3,price:3900,color:'#7C3AED'},
+];
+
+const INVERTERS = [
+  {id:'h5',name:'Huawei SUN2000-5KTL-M1',kw:5,type:'string',price:18000},
+  {id:'h8',name:'Huawei SUN2000-8KTL-M1',kw:8,type:'string',price:22000},
+  {id:'h10',name:'Huawei SUN2000-10KTL-M1',kw:10,type:'string',price:26000},
+  {id:'h15',name:'Huawei SUN2000-15KTL-M2',kw:15,type:'string',price:34000},
+  {id:'h20',name:'Huawei SUN2000-20KTL-M2',kw:20,type:'string',price:42000},
+  {id:'s10',name:'Sungrow SG10RS',kw:10,type:'string',price:22000},
+  {id:'s15',name:'Sungrow SG15RS',kw:15,type:'string',price:28000},
+  {id:'g5',name:'GoodWe GW5000-EHB',kw:5,type:'hybrid',price:28000},
+  {id:'g10',name:'GoodWe GW10000-EHB',kw:10,type:'hybrid',price:48000},
+];
+
+let selectedPanel = PANELS[0];
+let selectedInverter = INVERTERS[2];
+let currentPanelFilter = 'all';
+
+function renderPanels(filter) {
+  const list = document.getElementById('panel-list');
+  const customForm = document.getElementById('custom-panel-form');
+  if (filter === 'custom') {
+    list.innerHTML = '';
+    customForm.style.display = 'block';
+    return;
+  }
+  customForm.style.display = 'none';
+  const filtered = filter === 'all' ? PANELS : PANELS.filter(p => p.brand === filter);
+  list.innerHTML = filtered.map(p => `
+    <div class="panel-card ${p.id === selectedPanel.id ? 'selected':''}" onclick="selectPanel('${p.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:start">
+        <div>
+          <div class="panel-brand">${p.name}</div>
+          <div class="panel-spec">${p.model} · ประสิทธิภาพ ${p.eff}%</div>
+        </div>
+        <div style="text-align:right">
+          <div class="panel-watt">${p.watt}<span style="font-size:0.9rem;font-weight:400"> Wp</span></div>
+          <div style="font-size:0.75rem;color:var(--muted)">~${p.price.toLocaleString('th-TH')} บาท</div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterPanel(brand, btn) {
+  currentPanelFilter = brand;
+  document.querySelectorAll('.tab-panel-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPanels(brand);
+}
+
+function selectPanel(id) {
+  selectedPanel = PANELS.find(p => p.id === id) || selectedPanel;
+  renderPanels(currentPanelFilter);
+  calcTender();
+}
+
+function renderInverters() {
+  const sysType = document.getElementById('t_system').value;
+  const list = document.getElementById('inverter-list');
+  const suitable = INVERTERS.filter(inv =>
+    sysType === 'hybrid' ? inv.type === 'hybrid' : inv.type === 'string'
+  );
+  list.innerHTML = suitable.map(inv => `
+    <div class="inv-row ${inv.id === selectedInverter.id ? 'selected':''}" onclick="pickInverter('${inv.id}')">
+      <div>
+        <div class="inv-name">${inv.name}</div>
+        <div class="inv-spec">${inv.type === 'hybrid' ? '🔋 Hybrid' : '⚡ String'} Inverter</div>
+      </div>
+      <div class="inv-kw">${inv.kw} kW</div>
+      <div style="font-size:0.78rem;color:var(--muted);min-width:80px;text-align:right;">~${inv.price.toLocaleString('th-TH')} บาท</div>
+    </div>
+  `).join('');
+}
+
+function pickInverter(id) {
+  selectedInverter = INVERTERS.find(i => i.id === id) || selectedInverter;
+  renderInverters();
+  calcTender();
+}
+
+function selectCustomInv() {
+  const name = document.getElementById('ci_name').value;
+  const kw = parseFloat(document.getElementById('ci_kw').value);
+  const price = parseFloat(document.getElementById('ci_price').value) || 0;
+  if (!name || !kw) { alert('กรุณากรอกชื่อและกำลัง Inverter'); return; }
+  selectedInverter = {id:'custom',name,kw,type:'string',price};
+  calcTender();
+}
+
+function calcTender() {
+  const kwp = parseFloat(document.getElementById('t_kwp').value) || 0;
+  if (!kwp) { document.getElementById('tender-results').style.display = 'none'; return; }
+
+  // Get panel (custom or selected)
+  let panel = selectedPanel;
+  if (currentPanelFilter === 'custom') {
+    const name = document.getElementById('cp_name').value || 'Custom Panel';
+    const watt = parseFloat(document.getElementById('cp_watt').value) || 0;
+    const price = parseFloat(document.getElementById('cp_price').value) || 0;
+    if (!watt) { document.getElementById('tender-results').style.display='none'; return; }
+    panel = {name, watt, price, model:'Custom'};
+  }
+
+  const totalWp = kwp * 1000;
+  const nPanels = Math.ceil(totalWp / panel.watt);
+  const actualKwp = (nPanels * panel.watt) / 1000;
+  const nInv = Math.ceil(kwp / selectedInverter.kw);
+
+  const panelCost = nPanels * panel.price;
+  const invCost = nInv * selectedInverter.price;
+  const equipTotal = panelCost + invCost;
+
+  // BOM items
+  const sysType = document.getElementById('t_system').value;
+  const SYS_MULT = {ongrid:1.0, hybrid:1.65, offgrid:1.45};
+  const installMult = SYS_MULT[sysType];
+  const otherCost = Math.round(equipTotal * 0.4 * installMult); // wiring, structure, labor estimate
+  const grandTotal = equipTotal + otherCost;
+
+  // Update summary
+  document.getElementById('t-panels').textContent = nPanels.toLocaleString('th-TH');
+  document.getElementById('t-panel-name').textContent = panel.name.split(' ').slice(0,3).join(' ');
+  document.getElementById('t-total-kwp').textContent = fmt(actualKwp,2);
+  document.getElementById('t-invs').textContent = nInv;
+  document.getElementById('t-inv-name').textContent = selectedInverter.name.split(' ').slice(0,2).join(' ');
+  document.getElementById('t-panel-cost').textContent = fmt(panelCost);
+  document.getElementById('t-inv-cost').textContent = fmt(invCost);
+  document.getElementById('t-equip-total').textContent = fmt(equipTotal);
+  document.getElementById('t-est-total').textContent = '~' + fmt(grandTotal);
+
+  // BOM table
+  const bomItems = [
+    {item:'แผง Solar',spec:`${panel.name} ${panel.watt}Wp`,qty:nPanels,unit:'แผง',unitPrice:panel.price,total:panelCost},
+    {item:'Inverter',spec:`${selectedInverter.name} ${selectedInverter.kw}kW`,qty:nInv,unit:'เครื่อง',unitPrice:selectedInverter.price,total:invCost},
+    {item:'โครงเหล็ก + อุปกรณ์ยึด',spec:'ตามขนาดติดตั้ง',qty:nPanels,unit:'ชุด',unitPrice:Math.round(equipTotal*0.08/nPanels),total:Math.round(equipTotal*0.08)},
+    {item:'สายไฟ DC/AC + Protection',spec:'PV Cable + DC Breaker + SPD',qty:1,unit:'ชุด',unitPrice:Math.round(equipTotal*0.07),total:Math.round(equipTotal*0.07)},
+    {item:'Monitoring System',spec:'WiFi/4G + App',qty:1,unit:'ชุด',unitPrice:Math.round(equipTotal*0.03),total:Math.round(equipTotal*0.03)},
+    {item:'ค่าแรงติดตั้ง',spec:'รวมค่าแรงและค่าขนส่ง',qty:1,unit:'ครั้ง',unitPrice:Math.round(equipTotal*0.22*installMult),total:Math.round(equipTotal*0.22*installMult)},
+  ];
+
+  document.getElementById('bom-body').innerHTML = bomItems.map(b => `
+    <tr>
+      <td>${b.item}</td>
+      <td style="color:var(--muted);font-size:0.8rem">${b.spec}</td>
+      <td style="text-align:right"><span class="bom-qty">${b.qty.toLocaleString('th-TH')}</span> ${b.unit}</td>
+      <td style="text-align:right">${fmt(b.unitPrice)}</td>
+      <td style="text-align:right;font-weight:700;color:var(--sky)">${fmt(b.total)}</td>
+    </tr>
+  `).join('') + `
+    <tr style="background:var(--sky)">
+      <td colspan="4" style="color:white;font-weight:700;padding:10px 12px;">รวมทั้งหมด (ประมาณ)</td>
+      <td style="text-align:right;color:#F5A623;font-weight:700;font-size:1rem;padding:10px 12px;">${fmt(grandTotal)}</td>
+    </tr>
+  `;
+
+  document.getElementById('tender-results').style.display = 'block';
+
+  // Store for PDF
+  window.lastTenderResult = {nPanels, panel, actualKwp, nInv, panelCost, invCost, equipTotal, grandTotal, bomItems, kwp};
+}
+
+function exportTenderPDF() {
+  const r = window.lastTenderResult;
+  if (!r) { alert('กรุณาคำนวณก่อน'); return; }
+  const project = document.getElementById('t_project').value || 'โครงการ';
+  const today = new Date().toLocaleDateString('th-TH', {year:'numeric',month:'long',day:'numeric'});
+  const logoSrc = brandConfig.logoDataUrl;
+
+  document.getElementById('bom-date').textContent = today;
+  document.getElementById('bom-project-header').textContent = 'โครงการ: ' + project;
+  document.getElementById('bom-company-name').textContent = brandConfig.company || 'WattSense';
+  document.getElementById('bom-brand-stripe').style.background = brandConfig.color;
+  document.getElementById('bom-panels-pdf').textContent = r.nPanels.toLocaleString('th-TH');
+  document.getElementById('bom-panel-name-pdf').textContent = r.panel.name.split(' ').slice(0,2).join(' ');
+  document.getElementById('bom-kwp-pdf').textContent = fmt(r.actualKwp,2);
+  document.getElementById('bom-total-pdf').textContent = fmt(r.grandTotal);
+  document.getElementById('bom-panels-pdf').style.color = brandConfig.color;
+  document.getElementById('bom-kwp-pdf').style.color = brandConfig.color;
+  document.getElementById('bom-total-pdf').style.color = brandConfig.color;
+
+  if (logoSrc) {
+    document.getElementById('bom-logo-wrap').style.display = 'block';
+    document.getElementById('bom-logo').src = logoSrc;
+  }
+  if (brandConfig.company && brandConfig.email) {
+    document.getElementById('bom-footer').textContent = `${brandConfig.company} · ${brandConfig.email} · ${brandConfig.phone}`;
+  }
+
+  document.getElementById('bom-pdf-body').innerHTML = r.bomItems.map(b => `
+    <tr>
+      <td style="padding:7px 10px;border-bottom:1px solid #F0EBE1">${b.item}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #F0EBE1;color:#6B7280;font-size:0.8rem">${b.spec}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #F0EBE1;text-align:right;font-weight:700">${b.qty.toLocaleString('th-TH')} ${b.unit}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #F0EBE1;text-align:right">${fmt(b.unitPrice)}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #F0EBE1;text-align:right;font-weight:700;color:#1A3A5C">${fmt(b.total)}</td>
+    </tr>
+  `).join('') + `
+    <tr style="background:#1A3A5C">
+      <td colspan="4" style="color:white;font-weight:700;padding:9px 10px">รวมทั้งหมด</td>
+      <td style="text-align:right;font-weight:700;padding:9px 10px;" id="bom-grand-total-pdf">${fmt(r.grandTotal)}</td>
+    </tr>
+  `;
+  document.getElementById('bom-grand-total-pdf').style.color = brandConfig.color;
+
+  const el = document.getElementById('bom-pdf-template');
+  el.style.display = 'block';
+  html2pdf().set({
+    margin:10, filename:`BOM_${project}_${new Date().toISOString().slice(0,10)}.pdf`,
+    image:{type:'jpeg',quality:0.97},
+    html2canvas:{scale:2,useCORS:true},
+    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+  }).from(el).save().then(() => { el.style.display = 'none'; });
+}
+
+// ══════════════════════════════
+// NAV
+// ══════════════════════════════
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (id === 'tender') { renderPanels(currentPanelFilter); renderInverters(); }
+}
+
+// ══════════════════════════════
+// SOLAR CALC
+// ══════════════════════════════
+let solarSys = 'ongrid';
+let lastSolarResult = {};
+const PSH = {south:4.8,central:4.5,north:4.2,northeast:4.6,east:4.7};
+const SYS_MULT = {ongrid:1.0,hybrid:1.65,offgrid:1.45};
+const PR = {ongrid:0.80,hybrid:0.77,offgrid:0.75};
+
+function selectSys(type, el) {
+  solarSys = type;
+  document.querySelectorAll('.sys-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function fmt(n, d=0) {
+  return Number(n).toLocaleString('th-TH', {minimumFractionDigits:d, maximumFractionDigits:d});
+}
+
+function calcSolar() {
+  const bill   = parseFloat(document.getElementById('s_bill').value) || 0;
+  const kwh    = parseFloat(document.getElementById('s_kwh').value) || 0;
+  const area   = parseFloat(document.getElementById('s_area').value) || 999;
+  const region = document.getElementById('s_region').value;
+  const costwp = parseFloat(document.getElementById('s_costwp').value) || 25;
+  const tariff = parseFloat(document.getElementById('s_tariff').value) || 4.20;
+  const fit    = parseFloat(document.getElementById('s_fit').value) || 0;
+  if (!bill && !kwh) { alert('กรุณากรอกค่าไฟ หรือ หน่วยที่ใช้/เดือน'); return; }
+  const monthKwh = kwh > 0 ? kwh : bill / tariff;
+  const annualKwh = monthKwh * 12;
+  const psh = PSH[region]; const pr = PR[solarSys]; const cover = 0.80;
+  let kwp = (annualKwh * cover) / (365 * psh * pr);
+  const areaKwp = area / 5.5;
+  kwp = Math.min(kwp, areaKwp);
+  kwp = Math.ceil(kwp * 2) / 2;
+  const panels = Math.ceil(kwp * 1000 / 580);
+  const annualProd = kwp * psh * 365 * pr;
+  const coverPct = Math.min(100, Math.round((annualProd / annualKwh) * 100));
+  const investMult = SYS_MULT[solarSys];
+  const invest = kwp * 1000 * costwp * investMult;
+  const selfConsume = Math.min(annualProd, annualKwh);
+  const exported = Math.max(0, annualProd - annualKwh);
+  const annualSave = (selfConsume * tariff) + (exported * fit);
+  const payback = invest / annualSave;
+  const total25 = annualSave * 25;
+  const roi25 = ((total25 - invest) / invest) * 100;
+  const co2 = Math.round(annualProd * 0.5213);
+  const sysNames = {ongrid:'On-Grid',hybrid:'Hybrid + แบตเตอรี่',offgrid:'Off-Grid'};
+  lastSolarResult = {kwp,panels,annualProd,coverPct,invest,annualSave,payback,roi25,total25,co2,sysNames};
+  document.getElementById('sr-kwp').textContent = fmt(kwp,1);
+  document.getElementById('sr-detail').textContent = `แผง ${panels} แผง · ระบบ${sysNames[solarSys]} · พื้นที่ ~${panels*2} ตร.ม.`;
+  document.getElementById('sr-prod').textContent = fmt(Math.round(annualProd));
+  document.getElementById('sr-save').textContent = fmt(Math.round(annualSave));
+  document.getElementById('sr-invest').textContent = fmt(Math.round(invest));
+  document.getElementById('sr-co2').textContent = fmt(co2);
+  document.getElementById('sr-cover').textContent = coverPct + '%';
+  document.getElementById('sr-roi').textContent = fmt(Math.round(roi25)) + '%';
+  document.getElementById('sr-payback').textContent = fmt(payback,1) + ' ปี';
+  setTimeout(() => {
+    document.getElementById('bar-cover').style.width = Math.min(100,coverPct)+'%';
+    document.getElementById('bar-roi').style.width = Math.min(100,roi25/3)+'%';
+  }, 100);
+  buildPayback(payback);
+  document.getElementById('solar-results').style.display = 'block';
+  setTimeout(() => document.getElementById('solar-results').scrollIntoView({behavior:'smooth',block:'start'}), 120);
+}
+
+function buildPayback(payback) {
+  const row = document.getElementById('pb-row');
+  row.innerHTML = '';
+  const years = [0,3,5,7,10,15,20,25];
+  let passedPayback = false;
+  years.forEach(y => {
+    const step = document.createElement('div'); step.className = 'pb-step';
+    const dot = document.createElement('div');
+    const lbl = document.createElement('div'); lbl.className = 'pb-lbl';
+    lbl.textContent = y === 0 ? 'ติดตั้ง' : `ปี ${y}`;
+    if (y === 0) { dot.className = 'pb-dot paid'; }
+    else if (!passedPayback && y >= payback) {
+      dot.className = 'pb-dot now'; lbl.className = 'pb-lbl now';
+      lbl.textContent = `คืนทุน ~ปี ${Math.round(payback)}`; passedPayback = true;
+    } else if (y < payback) { dot.className = 'pb-dot paid'; }
+    else { dot.className = 'pb-dot'; }
+    step.appendChild(dot); step.appendChild(lbl); row.appendChild(step);
+  });
+}
+
+function exportPDF() {
+  const r = lastSolarResult;
+  if (!r.kwp) { alert('กรุณาคำนวณก่อน'); return; }
+  const customer = document.getElementById('s_customer').value || 'ลูกค้า';
+  const today = new Date().toLocaleDateString('th-TH', {year:'numeric',month:'long',day:'numeric'});
+  document.getElementById('pdf-date').textContent = today;
+  document.getElementById('pdf-customer-header').textContent = 'จัดทำให้: ' + customer;
+  document.getElementById('pdf-kwp').textContent = fmt(r.kwp,1);
+  document.getElementById('pdf-kwp').style.color = brandConfig.color;
+  document.getElementById('pdf-detail').textContent = `แผง ${r.panels} แผง · ระบบ ${r.sysNames[solarSys]}`;
+  document.getElementById('pdf-payback').textContent = fmt(r.payback,1) + ' ปี';
+  document.getElementById('pdf-roi').textContent = fmt(Math.round(r.roi25)) + '%';
+  document.getElementById('pdf-total25').textContent = fmt(Math.round(r.total25)) + ' บาท';
+  document.getElementById('pdf-co2-25').textContent = fmt(r.co2*25) + ' kg CO₂';
+  document.getElementById('pdf-brand-stripe').style.background = brandConfig.color;
+
+  if (brandConfig.company) {
+    document.getElementById('pdf-company-name').textContent = brandConfig.company;
+    document.getElementById('pdf-company-sub').textContent = brandConfig.tagline || 'รายงานการวิเคราะห์ระบบโซลาร์';
+  }
+  if (brandConfig.logoDataUrl) {
+    document.getElementById('pdf-logo-wrap').style.display = 'block';
+    document.getElementById('pdf-logo').src = brandConfig.logoDataUrl;
+  }
+  if (brandConfig.phone || brandConfig.email) {
+    document.getElementById('pdf-contact').textContent = [brandConfig.phone, brandConfig.email].filter(Boolean).join(' · ');
+  }
+  if (brandConfig.company) {
+    document.getElementById('pdf-footer').textContent = `${brandConfig.company} · ${brandConfig.tagline||''} · ค่าประมาณอ้างอิงจากมาตรฐาน PSH และ PR`;
+  }
+
+  document.getElementById('pdf-kpis').innerHTML = [
+    {icon:'💡',label:'ผลิตไฟ/ปี',val:fmt(Math.round(r.annualProd))+' kWh'},
+    {icon:'💰',label:'ประหยัด/ปี',val:fmt(Math.round(r.annualSave))+' บาท'},
+    {icon:'🏗️',label:'งบลงทุน',val:fmt(Math.round(r.invest))+' บาท'},
+    {icon:'🌱',label:'ลด CO₂/ปี',val:fmt(r.co2)+' kg'},
+  ].map(k => `
+    <div style="background:#F0EBE1;border-radius:8px;padding:14px;text-align:center;">
+      <div style="font-size:1.2rem">${k.icon}</div>
+      <div style="font-size:0.72rem;color:#6B7280">${k.label}</div>
+      <div style="font-size:1.1rem;font-weight:700;color:#1A3A5C">${k.val}</div>
+    </div>`).join('');
+
+  const el = document.getElementById('pdf-template');
+  el.style.display = 'block';
+  html2pdf().set({
+    margin:10, filename:`WattSense_${customer}_${new Date().toISOString().slice(0,10)}.pdf`,
+    image:{type:'jpeg',quality:0.97},
+    html2canvas:{scale:2,useCORS:true},
+    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+  }).from(el).save().then(() => { el.style.display = 'none'; });
+}
+
+// ══════════════════════════════
+// LOAD CALCULATOR
+// ══════════════════════════════
+const PRESETS = {
+  'บ้านทาวน์เฮ้าส์':[
+    {name:'แอร์ 12000 BTU',w:1200,qty:1,hrs:8,period:'ทุกวัน'},
+    {name:'ตู้เย็น',w:150,qty:1,hrs:24,period:'ทุกวัน'},
+    {name:'เครื่องทำน้ำอุ่น',w:3500,qty:1,hrs:0.5,period:'ทุกวัน'},
+    {name:'โทรทัศน์ 43"',w:100,qty:1,hrs:5,period:'ทุกวัน'},
+    {name:'พัดลม',w:60,qty:2,hrs:6,period:'ทุกวัน'},
+    {name:'หลอดไฟ LED',w:10,qty:10,hrs:6,period:'ทุกวัน'},
+    {name:'เครื่องซักผ้า',w:500,qty:1,hrs:1,period:'ทุกวัน'},
+    {name:'คอมพิวเตอร์/โน้ตบุ๊ก',w:65,qty:1,hrs:6,period:'ทุกวัน'},
+  ],
+  'บ้านเดี่ยว':[
+    {name:'แอร์ 18000 BTU',w:1800,qty:3,hrs:8,period:'ทุกวัน'},
+    {name:'ตู้เย็น',w:180,qty:2,hrs:24,period:'ทุกวัน'},
+    {name:'เครื่องทำน้ำอุ่น',w:3500,qty:2,hrs:0.5,period:'ทุกวัน'},
+    {name:'โทรทัศน์',w:120,qty:2,hrs:5,period:'ทุกวัน'},
+    {name:'เครื่องซักผ้า',w:500,qty:1,hrs:1.5,period:'ทุกวัน'},
+    {name:'หลอดไฟ LED',w:10,qty:20,hrs:6,period:'ทุกวัน'},
+    {name:'ปั๊มน้ำ',w:375,qty:1,hrs:2,period:'ทุกวัน'},
+    {name:'เตาไมโครเวฟ',w:1000,qty:1,hrs:0.5,period:'ทุกวัน'},
+  ],
+  'คอนโด':[
+    {name:'แอร์ 9000 BTU',w:900,qty:1,hrs:8,period:'ทุกวัน'},
+    {name:'ตู้เย็น',w:100,qty:1,hrs:24,period:'ทุกวัน'},
+    {name:'เครื่องทำน้ำอุ่น',w:3500,qty:1,hrs:0.5,period:'ทุกวัน'},
+    {name:'โทรทัศน์',w:80,qty:1,hrs:4,period:'ทุกวัน'},
+    {name:'หลอดไฟ LED',w:10,qty:6,hrs:5,period:'ทุกวัน'},
+    {name:'โน้ตบุ๊ก',w:65,qty:1,hrs:8,period:'ทุกวัน'},
+  ],
+  'ออฟฟิศเล็ก':[
+    {name:'แอร์ 18000 BTU',w:1800,qty:2,hrs:9,period:'จ-ศ'},
+    {name:'คอมพิวเตอร์',w:200,qty:5,hrs:9,period:'จ-ศ'},
+    {name:'หลอดไฟ LED',w:18,qty:20,hrs:10,period:'จ-ศ'},
+    {name:'เครื่องพิมพ์',w:500,qty:1,hrs:1,period:'จ-ศ'},
+    {name:'ตู้เย็น',w:150,qty:1,hrs:24,period:'ทุกวัน'},
+    {name:'เครื่องกดน้ำ',w:500,qty:1,hrs:8,period:'จ-ศ'},
+  ]
+};
+const PERIOD_DAYS = {'ทุกวัน':30,'จ-ศ':22,'เสาร์-อาทิตย์':8,'วันเดียว':1};
+let rowId = 0;
+
+function addRow(name='',w=0,qty=1,hrs=0,period='ทุกวัน') {
+  rowId++;
+  const id = rowId;
+  const days = Object.keys(PERIOD_DAYS);
+  const periodOpts = days.map(d=>`<option value="${d}" ${d===period?'selected':''}>${d}</option>`).join('');
+  const row = document.createElement('div'); row.className='appliance-row'; row.id='row-'+id;
+  row.innerHTML = `
+    <input type="text" placeholder="ชื่อเครื่อง" value="${name}" oninput="updateLoad()">
+    <input type="number" placeholder="W" value="${w||''}" min="0" oninput="updateLoad()">
+    <input type="number" placeholder="ชิ้น" value="${qty}" min="1" oninput="updateLoad()">
+    <input type="number" placeholder="ชม." value="${hrs||''}" min="0" step="0.5" oninput="updateLoad()">
+    <select onchange="updateLoad()">${periodOpts}</select>
+    <div class="row-kwh" id="kwh-${id}">0</div>
+    <button class="del-btn" onclick="delRow(${id})">✕</button>
+  `;
+  document.getElementById('appliance-list').appendChild(row);
+  updateLoad();
+}
+
+function delRow(id) { const el=document.getElementById('row-'+id); if(el)el.remove(); updateLoad(); }
+
+function addPreset(name) {
+  document.getElementById('appliance-list').innerHTML=''; rowId=0;
+  (PRESETS[name]||[]).forEach(a=>addRow(a.name,a.w,a.qty,a.hrs,a.period));
+}
+
+function updateLoad() {
+  let totalW=0,totalKwh=0;
+  document.querySelectorAll('.appliance-row').forEach(row => {
+    const inputs=row.querySelectorAll('input'); const sel=row.querySelector('select');
+    const w=parseFloat(inputs[1].value)||0, qty=parseFloat(inputs[2].value)||1;
+    const hrs=parseFloat(inputs[3].value)||0, period=sel?sel.value:'ทุกวัน';
+    const days=PERIOD_DAYS[period]||30, kwh=(w*qty*hrs*days)/1000;
+    const kwhEl=row.querySelector('[id^="kwh-"]'); if(kwhEl)kwhEl.textContent=kwh.toFixed(1);
+    totalW+=w*qty; totalKwh+=kwh;
+  });
+  document.getElementById('l-total-w').textContent=fmt(Math.round(totalW));
+  document.getElementById('l-total-kwh').textContent=fmt(totalKwh,1);
+  document.getElementById('l-total-thb').textContent=fmt(Math.round(totalKwh*4.20));
+  const lts=document.getElementById('load-to-solar');
+  if(totalKwh>0){lts.style.display='block';document.getElementById('lts-kwh').textContent=fmt(totalKwh,1);}
+  else{lts.style.display='none';}
+}
+
+function sendToSolar() {
+  const kwh=parseFloat(document.getElementById('l-total-kwh').textContent.replace(/,/g,''))||0;
+  const thb=parseFloat(document.getElementById('l-total-thb').textContent.replace(/,/g,''))||0;
+  document.getElementById('s_kwh').value=Math.round(kwh);
+  document.getElementById('s_bill').value=Math.round(thb);
+  showPage('solar',document.getElementById('tab-solar'));
+  setTimeout(()=>document.getElementById('page-solar').scrollIntoView({behavior:'smooth'}),100);
+}
+
+// Init
+addRow('แอร์ 12000 BTU',1200,1,8,'ทุกวัน');
+addRow('ตู้เย็น',150,1,24,'ทุกวัน');
+addRow('หลอดไฟ LED',10,8,6,'ทุกวัน');
+</script>
+</body>
+</html>
